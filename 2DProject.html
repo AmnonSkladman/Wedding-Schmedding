@@ -1,0 +1,253 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Wedding Schmedding</title>
+
+<script src="https://code.createjs.com/createjs-2015.11.26.min.js"></script>
+<script>var zon = true; // true for comments from zim code</script>
+<script src="https://d309knd7es5f10.cloudfront.net/zim_4.7.3.js"></script>
+
+<!-- physics libraries -->
+<script src="https://d309knd7es5f10.cloudfront.net/Box2dWeb-2.1.a.3.min.js"></script>
+<script src="https://d309knd7es5f10.cloudfront.net/physics_0.1.0.js"></script><!-- helper code for box2D -->
+
+<!-- FONTS -->
+<link href="https://fonts.googleapis.com/css?family=Sacramento" rel="stylesheet">
+
+<!-- STYLES -->
+<style>
+    body {margin:0px; padding:0px; background-color:#ffffff}
+    #myCanvas {background-image: url(_assets/skycrop.png); background-color:#9fe8f4}
+</style>
+
+
+<script>
+
+var frame = new zim.Frame("fit", 1920, 1080, "#9fe8f4");
+frame.on("ready", function() {
+	zog("ready from ZIM Frame");
+    
+    frame.loadAssets(["flower.png", "beforeTada.png", "tada.png", "arch.png", "whiteflower.png", "redflower.png"], "_assets/");
+    frame.on("complete", function() {
+        
+        var stage = frame.stage;
+        var stageW = frame.width;
+        var stageH = frame.height;
+
+        // 1. make borders for the world
+        // this stops stuff from going off the screen
+        // but also could stop things from falling in through the top of the screen
+        var borders = {x:0, y:0, width:stageW, height:stageH};
+
+        // 2. make a new Physics object passing in the ZIM frame and borders
+        // it needs a frame so it can get scale to match the debug canvas
+        var physics = new zim.Physics(frame, borders, 0.2);
+
+        // EXTRA
+        // for custom Box2D you may want access to the b2World
+        // and scale that is used
+        // var world = physics.world;
+        // var scale = physics.scale;
+
+        // 3. alternatively remove any of the borders
+        // also borderTop, borderLeft, borderRight
+        // physics.remove(physics.borderBottom);
+
+        // INITIAL VARS
+        // here we specify width, height, radius
+        // so we can use both for Box2D shapes and ZIM shapes
+        var barW = 400;
+        var barH = 20;
+
+        var barCloneW = 400;
+        var barCloneH = 20;
+
+        var boxW = 150;
+        var boxH = 150;
+
+        var gtRad = 210;
+
+        var flR = 45;
+
+
+        // ANGLED BARS + Wedding gate
+        // 4. create Box2D body assets specifying dynamic and other properties
+        // dynamic defaults to true and means the body will move
+        // here we set the bar to not be dynamic so it is fixed
+        // width, height, dynamic, friction, angular, density, restitution, maskBits, categoryBits
+        var gateTopBody = physics.makeCircle(gtRad, false);
+
+        var barBody = physics.makeRectangle(barW, barH, false);
+
+        var barBodyClone = physics.makeRectangle(barCloneW, barCloneH, false);
+
+        // 5. position and rotate the bodies (only at start)
+        barBody.x = stageW/2 - 200;
+        barBody.y = stageH - barBody.height*10;
+        barBody.rotation = 90;
+
+        barBodyClone.x = stageW/2 + 200;
+        barBodyClone.y = stageH - barBodyClone.height*10;
+        barBodyClone.rotation = 90;
+
+        gateTopBody.x = stageW/2;
+        gateTopBody.y = 715;
+
+        // BOX
+        // 4. create Box2D body assets specifying dynamic and other properties
+        // friction means how much the body will slow down sliding
+        // with 0 meaning very little slowdown and 1 being lots of slowdown (Sticky)
+        // width, height, dynamic, friction, angular, density, restitution, maskBits, categoryBits
+
+
+        // 5. position and rotate the bodies (only at start)
+
+
+        function flrLoc(obj, radius) {
+            obj.x = Math.random() * (stageW - radius);
+            obj.y = Math.random() * (stageH - radius);
+            if ((obj.x > stageW/2 - gtRad) &&
+                (obj.x < stageW/2 + gtRad) && 
+                (obj.y > gateTopBody.y - gtRad) && 
+                (obj.y < stageH)) {
+                flrLoc(obj, radius);
+            }; //end of if
+        }; //end of flrLoc
+
+        var flowerAsset = frame.asset("redflower.png");
+        
+        for (var i=0; i<50; i++) {
+            var flRnd = Math.random() * (flR - 8) + 8;
+            var flrBody = physics.makeCircle(flRnd, true, .2, null, null, 0.1);
+            var flower = flowerAsset.clone();
+            flower.width = flRnd*2;
+            flower.centerReg(stage);
+            flower.cursor = "pointer";
+            flrLoc(flrBody, flRnd);
+            physics.addMap(flrBody, flower);
+        };
+        
+        var flowerAsset2 = frame.asset("whiteflower.png");
+        
+        for (var i=0; i<50; i++) {
+            var flRnd = Math.random() * (flR - 8) + 8;
+            var flrBody = physics.makeCircle(flRnd, true, .2, null, null, 0.1);
+            var flower2 = flowerAsset2.clone();
+            flower2.width = flRnd*2;
+            flower2.centerReg(stage);
+            flower2.cursor = "pointer";
+            flrLoc(flrBody, flRnd);
+            physics.addMap(flrBody, flower2);
+        };
+
+        // MOUSE
+        // 6. set optional mouse dragging
+        // optionally pass in a list of bodies to receive mouse movement
+        // otherwise defaults to all moveable bodies
+        // physics.drag([boxBody, triangleBody]); // would not drag circleBody
+        physics.drag();
+
+        // 7. set optional debug canvas showing Box2D shapes
+        // DEBUG
+        // optionally see the BOX 2D debug canvas - uncomment below
+        // physics.debug();
+        // frame.on("resize", function() {
+        // 	physics.updateDebug();
+        // });
+
+        // 8. create ZIM assets to match physics world
+        // Box2D bodies (made by physics.js) have centered positions
+        // so center the registration points for ZIM assets
+        var gateTop = new zim.Circle(gtRad, "red"); //frame.asset("asdas.j)
+        gateTop.centerReg(stage);
+        gateTop.alpha = 0;
+
+        var bar = new zim.Rectangle(barW, barH, frame.silver);
+        bar.centerReg(stage);
+        bar.alpha = 0;
+
+        var barClone = new zim.Rectangle(barCloneW, barCloneH, frame.silver);
+        barClone.centerReg(stage);
+        barClone.alpha = 0;
+
+
+
+        // MAPPING
+        // 9. map the ZIM assets to the Box2D assets
+        // this puts the ZIM assets on the Box2D assets
+        // and rotates them to the same rotation
+        physics.addMap(barBody, bar);
+
+        physics.addMap(barBodyClone, barClone);
+
+        physics.addMap(gateTopBody, gateTop);
+
+        // you can also remove maps and shapes:
+        // physics.removeMap(boxBody);
+        // physics.remove(boxBody);
+        // stage.removeChild(box);
+
+        // EXTRA
+        // you can also access the update function and add your own calls
+        // after defaults to true to add your function after the world step
+        // set after to false to add your function before the world step
+        // physics.Ticker.add(function, after);
+        // physics.Ticker.remove(function);
+        // this is required for forces and torque which get applied each step
+        // unless it is an impulse force which gets applied all at once
+        
+        var arch = frame.asset("arch.png");
+        stage.addChild(arch);
+        arch.x = stageW/2 - arch.width/2 + 32;
+        arch.y = stageH-arch.height + 70;
+        zim.scale(arch, 0.90);
+        
+        var couple = frame.asset("beforeTada.png");
+        stage.addChild(couple);
+        couple.x = stageW/2 - couple.width/2;
+        couple.y = stageH - couple.height;
+        
+        var couple2 = frame.asset("tada.png");
+        stage.addChild(couple2);
+        couple2.x = stageW/2 - couple2.width/2;
+        couple2.y = stageH - couple2.height;
+        couple2.alpha = 0;
+        
+        var label = new zim.Label({
+            text: "Save the date March 24 2017",
+            alpha: 0,
+            color: "#ffffff",
+            shadowColor: "#000000",
+            shadowBlur: 3,
+            font: "sacramento",
+            align: "center",
+            size: 50,
+            lineWidth: 250
+        });
+        stage.addChild(label);
+        label.x = stageW/2;
+        label.y = stageH/2 + 118;
+        
+        couple.on("mouseover", function(){
+            couple.alpha = 0;
+            couple2.alpha = 1;
+            label.alpha = 1;
+        });
+        
+        couple.on("mouseout", function(){
+            couple.alpha = 1;
+            couple2.alpha = 0;
+            label.alpha = 0;
+        });
+
+        stage.update();
+    }); //end of assets complete
+}); //end of ready
+
+</script>
+</head>
+
+<body>
+</body>
+</html>
